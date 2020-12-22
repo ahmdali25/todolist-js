@@ -1,4 +1,46 @@
-const todo = document.querySelector('#todo');
+let todos = {};
+const STORAGE_TODO = "STORAGE_TODO";
+const todoBox = document.querySelector('#todo');
+
+// LOCAL STORAGE
+
+// Check if localstorage API is available
+if (typeof(Storage) !== "undefined")
+    console.log("local storage available")
+else
+    console.log("oops. your data will gone after page reload")
+
+// read localstorage on first load
+if(todoFromLocal = localStorage.getItem(STORAGE_TODO)) {
+    todos = JSON.parse(todoFromLocal);
+    console.log(todos);
+
+    // loop isi object todos
+    for(let key in todos) {
+        createList(key, todos[key]);
+    }
+}
+
+function syncLocalStorage(activity, item, status = false) {
+    switch(activity) {
+        case 'Add':
+        case 'Update':
+            todos[item] = status
+            break;
+        case 'Delete':
+            delete todos[item]
+            break;
+        default:
+            break;
+    }
+
+    console.log(todos);
+
+    localStorage.setItem(STORAGE_TODO, JSON.stringify(todos));
+    return;
+}
+
+// TODO FUNCTION
 
 // Fungsi untuk menambahkan todo
 function add() {
@@ -6,22 +48,30 @@ function add() {
     let newText = document.querySelector('#newText');
    
     //2. Tambahkan list baru ke dalam ul
-    let newTodo = "<li> <span onclick='toggle(this)'> <input type='checkbox'>" + newText.value + "</span>" +
-                    "<span onclick='removeItem(this)'> [x] </span>" +                
-                    "</li>"
-
-    todo.insertAdjacentHTML('afterbegin', newTodo);
+    createList(newText.value);
+    syncLocalStorage('Add', newText.value);
     
     //3. Kosongkan fieldnya
     newText.value = ""
 }
 
+function createList(text, status = false) {
+    let isDone = (status) ? 'done' : ''
+    let newTodo = `<li> <span  class='${isDone}' onclick='toggle(this)'> <input type='checkbox'>${text}</span> 
+                    <span onclick='removeItem(this)'>[x]</span>                
+                   </li>`
+    
+    todoBox.insertAdjacentHTML('afterbegin', newTodo);
+}
+
 // Fungsi untuk mencoret todo
 function toggle (element) {
-    element.classList.toggle('done');
+    let status = element.classList.toggle('done');
+    syncLocalStorage('Update', element.innerText, status);
 }
 
 // Fungsi untuk menghapus todo 
 function removeItem (element) {
     element.parentElement.remove();
+    syncLocalStorage('Delete', element.previousElementSibling.innerText.trim());
 }
